@@ -19,7 +19,7 @@ namespace Spoiler.WinForms
 
         private void button1_Click(object sender, EventArgs e)
         {
-            spoiler2.Text = "OK!";
+            //spoiler2.Text = "OK!";
         }
 
         //protected override void OnMouseClick(MouseEventArgs e)

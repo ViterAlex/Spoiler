@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Linq;
-using System.Net.Configuration;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using static Spoiler.Lib.Win32Helpers;
 
@@ -14,72 +9,163 @@ namespace Spoiler.Lib
 {
     public class Spoiler : Panel
     {
-        private string text;
-        private bool isMouseOver;
-        private int clientHeight;
-        private Cursor currentCursor;
+        private Color titlebarBackColor = SystemColors.ActiveCaption;
+        [DefaultValue(typeof(Color), "162,188,216")]
+        public Color TitlebarBackColor
+        {
+            get { return titlebarBackColor; }
+            set
+            {
+                if (titlebarBackColor != value)
+                {
+                    titlebarBackColor = value;
+                    Redraw();
+                }
+            }
+        }
 
-        [EditorBrowsable(EditorBrowsableState.Always)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        [Description("Текст заголовка")]
+        private Color titlebarForeColor = Color.White;
+        [DefaultValue(typeof(Color), "White")]
+        public Color TitlebarForeColor
+        {
+            get { return titlebarForeColor; }
+            set
+            {
+                if (titlebarForeColor != value)
+                {
+                    titlebarForeColor = value;
+                    Redraw();
+                }
+            }
+        }
+
+        private bool showTitlebar = true;
+        [DefaultValue(true)]
+        public bool ShowTitlebar
+        {
+            get { return showTitlebar; }
+            set
+            {
+                if (showTitlebar != value)
+                {
+                    showTitlebar = value;
+                    RecalculateClientSize();
+                    Redraw();
+                }
+            }
+        }
+
         [Browsable(true)]
+        [EditorBrowsable(EditorBrowsableState.Always)]
+        [Bindable(true)]
         public override string Text
         {
-            get => text; set
+            get
             {
-                if (text == value)
-                {
-                    return;
-                }
-                text = value;
+                return base.Text;
+            }
+            set
+            {
+                base.Text = value;
                 Redraw();
             }
         }
 
-        private void Redraw()
-        {
-            Win32Helpers.RedrawWindow(Handle, IntPtr.Zero, IntPtr.Zero, Win32Helpers.RDW_FRAME | Win32Helpers.RDW_INVALIDATE | Win32Helpers.RDW_UPDATENOW);
-        }
-
-        protected override CreateParams CreateParams
+        private Font titlebarFont = DefaultFont;
+        public virtual Font TitlebarFont
         {
             get
             {
-                var cp = base.CreateParams;
-                cp.Style |= WS_CAPTION;
-                //cp.ExStyle &= ~0x00000100;//WS_EX_WINDOWEDGE
-                return cp;
+                return titlebarFont;
+            }
+            set
+            {
+                if (titlebarFont != value)
+                {
+                    titlebarFont = value;
+                    RecalculateClientSize();
+                    Redraw();
+                }
+            }
+        }
+        private bool ShouldSerializeTitlebarFont()
+        {
+            return TitlebarFont != DefaultFont;
+        }
+        private void ResetTitlebarFont()
+        {
+            TitlebarFont = DefaultFont;
+        }
+
+        private Padding titlebarTextPadding = new Padding(3);
+
+        [DefaultValue(typeof(Padding), "3")]
+        public virtual Padding TitlebarTextPadding
+        {
+            get
+            {
+                return titlebarTextPadding;
+            }
+            set
+            {
+                if (titlebarTextPadding != value)
+                {
+                    titlebarTextPadding = value;
+                    RecalculateClientSize();
+                    Redraw();
+                }
             }
         }
 
-        public Spoiler()
+        private int prevHeight;
+        private bool collapsed;
+        private Cursor defaultCursor;
+
+        [DefaultValue(false)]
+        public bool Collapsed
         {
-            Text = this.GetType().Name;
-            Region = new Region(new Rectangle(0, 0, Width, Height));
-            SetStyle(ControlStyles.ResizeRedraw |
-                ControlStyles.UserPaint |
-                ControlStyles.AllPaintingInWmPaint |
-                ControlStyles.OptimizedDoubleBuffer |
-                ControlStyles.SupportsTransparentBackColor, true);
+            get
+            {
+                return collapsed;
+            }
+            set
+            {
+                if (collapsed != value)
+                {
+                    collapsed = value;
+                    ToggleCollapsed();
+                }
+            }
         }
 
-        protected override void OnHandleCreated(EventArgs e)
+        private void ToggleCollapsed()
         {
-            base.OnHandleCreated(e);
+            if (collapsed)
+            {
+                prevHeight = Height;
+                Height = GetTitlebarHeight();
+            }
+            else
+            {
+                Height = prevHeight;
+            }
         }
 
-        protected override void OnSizeChanged(EventArgs e)
+        public virtual int GetTitlebarHeight()
         {
-            base.OnSizeChanged(e);
-            Region = new Region(new Rectangle(0, 0, Width, Height));
-            Redraw();
+            return (int)TitlebarFont.GetHeight() +
+                titlebarTextPadding.Top +
+                titlebarTextPadding.Bottom;
         }
 
-        protected override void OnMove(EventArgs e)
+        public virtual Rectangle GetTitlebarRectangle()
         {
-            base.OnMove(e);
-            Region = new Region(new Rectangle(0, 0, Width, Height));
-            Redraw();
+            return new Rectangle(0, 0, Width, GetTitlebarHeight());
+        }
+
+        protected virtual void OnTitleMouseClick(MouseEventArgs e)
+        {
+            Collapsed = !collapsed;
         }
 
         protected override void WndProc(ref Message m)
@@ -87,138 +173,142 @@ namespace Spoiler.Lib
             base.WndProc(ref m);
             switch (m.Msg)
             {
+                case WM_NCPAINT:
+                    WmNCPaint(ref m);
+                    break;
                 case WM_NCCALCSIZE:
                     WmNCCalcSize(ref m);
                     break;
-                case WM_NCPAINT:
-                    WmNCPaint(m);
-                    break;
-                case WM_NCLBUTTONDOWN:
-                    Toggle();
-                    break;
-                case WM_NCHITTEST:
-                    if (m.Result.ToInt32() == HTCAPTION)
+                case WM_SETCURSOR:
+                    if (m.LParam.Loword() == HTNOWHERE)
                     {
-                        // Change the cursor to a hand cursor if it's not already the hand cursor
-                        if (Cursor.Current != Cursors.Hand)
+                        switch (m.LParam.Hiword())
                         {
-                            Cursor.Current = Cursors.Hand;
-                            SetCursor(IntPtr.Zero);
+                            case WM_LBUTTONUP:
+                                OnTitleMouseClick(new MouseEventArgs(MouseButtons.Left, 1, Cursor.Position.X, Cursor.Position.Y, -1));
+                                break;
+                            case WM_MOUSEMOVE:
+                                if (Cursor.Current == defaultCursor)
+                                {
+                                    Cursor.Current = Cursors.Hand;
+                                }
+                                break;
+                            default:
+                                break;
                         }
-                        else
+                    }
+                    else if (m.LParam.Loword() == HTCLIENT)
+                    {
+                        switch (m.LParam.Hiword())
                         {
-                            Cursor.Current = Cursors.Default;
-                            SetCursor(IntPtr.Zero);
+                            case WM_MOUSEMOVE:
+                                if (Cursor.Current != defaultCursor)
+                                {
+                                    Cursor.Current = defaultCursor;
+                                }
+                                break;
+                            default:
+                                break;
                         }
                     }
                     break;
-                //case WM_NCMOUSEMOVE:
-                //    if (m.WParam.ToInt32() == HTCAPTION && currentCursor == Cursors.Hand)
-                //    {
-                //        return;
-                //    }
-                //    break;
                 default:
                     break;
             }
+
         }
 
-        private void Toggle()
+        protected override void OnCursorChanged(EventArgs e)
         {
-            if (Height > SystemInformation.CaptionHeight)
+            base.OnCursorChanged(e);
+            defaultCursor = Cursor.Current;
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            if (collapsed)
             {
-                clientHeight = ClientSize.Height;
-                Height = SystemInformation.CaptionHeight;
+                Height = GetTitlebarHeight();
+                return;
             }
-            else
-            {
-                Height += clientHeight;
-            }
+            base.OnSizeChanged(e);
+            Redraw();
         }
 
-        private void TrackMouseLeave()
+        private void Redraw()
         {
-            //var tme = new TrackMouseEvent
-            //{
-            //    hwndTrack = Handle,
-            //    dwFlags = (int)TrackMouseEventFalgs.ALL
-            //};
-            //Externs.TrackMouseEvent(tme);
+            RedrawWindow(Handle, IntPtr.Zero, IntPtr.Zero,
+               RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
         }
 
-        private void WmNCPaint(Message m)
+        private void RecalculateClientSize()
         {
-            var hdc = Win32Helpers.GetWindowDC(m.HWnd);
-            using (var g = Graphics.FromHdc(hdc))
-            {
-                DrawBorder(g);
-                Title(g);
-            }
-            Win32Helpers.ReleaseDC(m.HWnd, hdc);
-            m.Result = IntPtr.Zero;
-        }
-
-        private void Title(Graphics g)
-        {
-            var sf = new StringFormat
-            {
-                FormatFlags = StringFormatFlags.NoWrap,
-                LineAlignment = StringAlignment.Center,
-                Alignment = StringAlignment.Near,
-                Trimming = StringTrimming.EllipsisCharacter
-            };
-            var rect = new Rectangle(0, 0, Width, SystemInformation.CaptionHeight);
-            g.FillRegion(SystemBrushes.ActiveCaption, Region);
-            //g.FillRectangle(SystemBrushes.ActiveCaption, rect);
-            g.DrawString(Text, Font, SystemBrushes.ActiveCaptionText, rect, sf);
-        }
-
-        private void DrawBorder(Graphics g)
-        {
-            //throw new NotImplementedException();
+            SetWindowPos(this.Handle, IntPtr.Zero, 0, 0, 0, 0,
+                SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_NOZOORDER);
         }
 
         private void WmNCCalcSize(ref Message m)
         {
-            var h = SystemInformation.CaptionHeight;
-            var bx = SystemInformation.HorizontalResizeBorderThickness + SystemInformation.FixedFrameBorderSize.Width;
-            var by = SystemInformation.VerticalResizeBorderThickness + SystemInformation.FixedFrameBorderSize.Height;
-            if (BorderStyle == BorderStyle.None)
-            {
-                bx++;
-                by++;
-            }
-            else if (BorderStyle == BorderStyle.Fixed3D)
-            {
-                bx = SystemInformation.HorizontalResizeBorderThickness + SystemInformation.Border3DSize.Width;
-                by = SystemInformation.VerticalResizeBorderThickness + SystemInformation.Border3DSize.Height;
-            }
+            var h = ShowTitlebar ? GetTitlebarHeight() : 0;
+            var b = BorderStyle == BorderStyle.FixedSingle ? 1 :
+               BorderStyle == BorderStyle.Fixed3D ? 2 : 0;
+
             if (m.WParam != IntPtr.Zero)
             {
                 var nccsp = (NCCALCSIZE_PARAMS)Marshal.PtrToStructure(m.LParam, typeof(NCCALCSIZE_PARAMS));
-                nccsp.rgrc[0].top -= by;
-                nccsp.rgrc[0].bottom += by;
-                nccsp.rgrc[0].left -= bx;
-                nccsp.rgrc[0].right += bx;
+                nccsp.rgrc[0].top += h - b;
+                nccsp.rgrc[0].bottom -= 0;
+                nccsp.rgrc[0].left += 0;
+                nccsp.rgrc[0].right -= 0;
                 Marshal.StructureToPtr(nccsp, m.LParam, true);
-                //InvalidateRect(this.Handle, nccsp.rgrc[0], true);
+                InvalidateRect(this.Handle, nccsp.rgrc[0], true);
                 m.Result = IntPtr.Zero;
             }
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
+        private void WmNCPaint(ref Message m)
         {
-            base.OnMouseMove(e);
-            //Text = e.Location.ToString();
+            if (!ShowTitlebar)
+                return;
+
+            var dc = GetWindowDC(Handle);
+            using (var g = Graphics.FromHdc(dc))
+            {
+                using (var b = new SolidBrush(TitlebarBackColor))
+                    g.FillRectangle(b, GetTitlebarRectangle());
+                if (BorderStyle != BorderStyle.None)
+                    using (var p = new Pen(TitlebarBackColor))
+                        g.DrawRectangle(p, 0, 0,
+                            Width - 1, Height - 1);
+
+                var tf = TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter;
+                if (RightToLeft == RightToLeft.Yes)
+                    tf |= TextFormatFlags.Right | TextFormatFlags.RightToLeft;
+                var t = GetTitlebarRectangle();
+                var r = new Rectangle(
+                    t.Left + TitlebarTextPadding.Left,
+                    t.Top,
+                    t.Width - TitlebarTextPadding.Left - TitlebarTextPadding.Right,
+                    t.Height);
+                TextRenderer.DrawText(g, Text, TitlebarFont, r, TitlebarForeColor, tf);
+            }
+            ReleaseDC(Handle, dc);
+            m.Result = IntPtr.Zero;
         }
 
-        private Rectangle RecalcNonClientArea(Rectangle proposed)
+        public override Size GetPreferredSize(Size proposedSize)
         {
-            return new Rectangle(
-                proposed.Left + SystemInformation.BorderSize.Width,
-                proposed.Top + SystemInformation.BorderSize.Height + SystemInformation.CaptionHeight,
-                proposed.Width - 2 * SystemInformation.BorderSize.Width,
-                proposed.Height - 2 * SystemInformation.BorderSize.Height + SystemInformation.CaptionHeight);
+            var size = base.GetPreferredSize(proposedSize);
+            if (ShowTitlebar)
+                size.Height += GetTitlebarHeight();
+            return size;
+        }
+
+        protected override void OnRightToLeftChanged(EventArgs e)
+        {
+            base.OnRightToLeftChanged(e);
+            RecalculateClientSize();
+            Redraw();
         }
     }
 }

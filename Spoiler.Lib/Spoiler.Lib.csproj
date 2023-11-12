@@ -47,8 +47,6 @@
     <Compile Include="SpoilerControl\Spoiler.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="SpoilerControl\SpoilerActionList.cs" />
-    <Compile Include="SpoilerControl\SpoilerDesigner.cs" />
     <Compile Include="Win32Helpers.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
