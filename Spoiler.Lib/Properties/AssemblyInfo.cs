@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Spoiler.Lib")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Spoiler для WinForms")]
+[assembly: AssemblyDescription("Бібліотека з компонентом Spoiler для WinForms")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Spoiler.Lib")]

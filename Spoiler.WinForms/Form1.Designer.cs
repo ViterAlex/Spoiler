@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.button1 = new System.Windows.Forms.Button();
-            this.spoiler2 = new Spoiler.Lib.Spoiler();
             this.spoiler1 = new Spoiler.Lib.Spoiler();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
@@ -46,24 +45,15 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // spoiler2
-            // 
-            this.spoiler2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.spoiler2.CollapsedText = null;
-            this.spoiler2.Location = new System.Drawing.Point(283, 90);
-            this.spoiler2.Name = "spoiler2";
-            this.spoiler2.Size = new System.Drawing.Size(192, 199);
-            this.spoiler2.TabIndex = 6;
-            this.spoiler2.UncollapsedText = null;
-            // 
             // spoiler1
             // 
             this.spoiler1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.spoiler1.CollapsedText = "Розгорнути";
             this.spoiler1.Controls.Add(this.tableLayoutPanel1);
-            this.spoiler1.Location = new System.Drawing.Point(41, 54);
+            this.spoiler1.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.spoiler1.Location = new System.Drawing.Point(0, 188);
             this.spoiler1.Name = "spoiler1";
-            this.spoiler1.Size = new System.Drawing.Size(186, 165);
+            this.spoiler1.Size = new System.Drawing.Size(516, 140);
             this.spoiler1.TabIndex = 5;
             this.spoiler1.UncollapsedText = "Згорнути";
             // 
@@ -77,7 +67,7 @@
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 1;
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(186, 147);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(516, 122);
             this.tableLayoutPanel1.TabIndex = 6;
             // 
             // propertyGrid1
@@ -96,7 +86,6 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 328);
-            this.Controls.Add(this.spoiler2);
             this.Controls.Add(this.spoiler1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.propertyGrid1);
@@ -112,7 +101,6 @@
         private System.Windows.Forms.Button button1;
         private Lib.Spoiler spoiler1;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-        private Lib.Spoiler spoiler2;
     }
 }
 
