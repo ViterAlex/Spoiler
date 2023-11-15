@@ -3,42 +3,14 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Spoiler.SpoilerControl;
 using static Spoiler.Lib.Win32Helpers;
 
 namespace Spoiler.Lib
 {
     public class Spoiler : Panel
     {
-        private Color titlebarBackColor = SystemColors.ActiveCaption;
-        [DefaultValue(typeof(Color), "162,188,216")]
-        public Color TitlebarBackColor
-        {
-            get { return titlebarBackColor; }
-            set
-            {
-                if (titlebarBackColor != value)
-                {
-                    titlebarBackColor = value;
-                    Redraw();
-                }
-            }
-        }
-
-        private Color titlebarForeColor = Color.White;
-        [DefaultValue(typeof(Color), "White")]
-        public Color TitlebarForeColor
-        {
-            get { return titlebarForeColor; }
-            set
-            {
-                if (titlebarForeColor != value)
-                {
-                    titlebarForeColor = value;
-                    Redraw();
-                }
-            }
-        }
-
+        private readonly TitleBar titleBar;
         private bool showTitlebar = true;
         [DefaultValue(true)]
         public bool ShowTitlebar
@@ -55,71 +27,37 @@ namespace Spoiler.Lib
             }
         }
 
-        [Browsable(true)]
-        [EditorBrowsable(EditorBrowsableState.Always)]
-        [Bindable(true)]
-        public override string Text
+        public string CollapsedText
         {
-            get
+            get => collapsedText; set
             {
-                return base.Text;
-            }
-            set
-            {
-                base.Text = value;
-                Redraw();
-            }
-        }
-
-        private Font titlebarFont = DefaultFont;
-        public virtual Font TitlebarFont
-        {
-            get
-            {
-                return titlebarFont;
-            }
-            set
-            {
-                if (titlebarFont != value)
+                if (collapsedText != value)
                 {
-                    titlebarFont = value;
-                    RecalculateClientSize();
-                    Redraw();
-                }
-            }
-        }
-        private bool ShouldSerializeTitlebarFont()
-        {
-            return TitlebarFont != DefaultFont;
-        }
-        private void ResetTitlebarFont()
-        {
-            TitlebarFont = DefaultFont;
-        }
-
-        private Padding titlebarTextPadding = new Padding(3);
-
-        [DefaultValue(typeof(Padding), "3")]
-        public virtual Padding TitlebarTextPadding
-        {
-            get
-            {
-                return titlebarTextPadding;
-            }
-            set
-            {
-                if (titlebarTextPadding != value)
-                {
-                    titlebarTextPadding = value;
-                    RecalculateClientSize();
+                    collapsedText = value;
+                    titleBar.Text = collapsedText;
                     Redraw();
                 }
             }
         }
 
-        private int prevHeight;
+        public string UncollapsedText
+        {
+            get => uncollapsedText; set
+            {
+                if (uncollapsedText != value)
+                {
+                    uncollapsedText = value;
+                    titleBar.Text = uncollapsedText;
+                    Redraw();
+                }
+            }
+        }
+
+        private int fullHeight;
         private bool collapsed;
-        private Cursor defaultCursor;
+        private string collapsedText;
+        private string uncollapsedText;
+        public TitleBar TitleBar => titleBar;
 
         [DefaultValue(false)]
         public bool Collapsed
@@ -134,33 +72,43 @@ namespace Spoiler.Lib
                 {
                     collapsed = value;
                     ToggleCollapsed();
+                    Redraw();
                 }
             }
+        }
+
+
+        public Spoiler()
+        {
+            titleBar = new TitleBar(Font, new Action<bool>(recalc =>
+            {
+                if (recalc)
+                {
+                    RecalculateClientSize();
+                }
+                Redraw();
+            }));
         }
 
         private void ToggleCollapsed()
         {
             if (collapsed)
             {
-                prevHeight = Height;
-                Height = GetTitlebarHeight();
+                fullHeight = Height;
+                Height = titleBar.Height;
+                titleBar.Text = collapsedText;
             }
             else
             {
-                Height = prevHeight;
+                Height = fullHeight;
+                titleBar.Text = uncollapsedText;
             }
         }
 
-        public virtual int GetTitlebarHeight()
-        {
-            return (int)TitlebarFont.GetHeight() +
-                titlebarTextPadding.Top +
-                titlebarTextPadding.Bottom;
-        }
 
         public virtual Rectangle GetTitlebarRectangle()
         {
-            return new Rectangle(0, 0, Width, GetTitlebarHeight());
+            return new Rectangle(0, 0, Width, titleBar.Height);
         }
 
         protected virtual void OnTitleMouseClick(MouseEventArgs e)
@@ -188,7 +136,7 @@ namespace Spoiler.Lib
                                 OnTitleMouseClick(new MouseEventArgs(MouseButtons.Left, 1, Cursor.Position.X, Cursor.Position.Y, -1));
                                 break;
                             case WM_MOUSEMOVE:
-                                if (Cursor.Current == defaultCursor)
+                                if (Cursor.Current != Cursors.Hand)
                                 {
                                     Cursor.Current = Cursors.Hand;
                                 }
@@ -202,9 +150,9 @@ namespace Spoiler.Lib
                         switch (m.LParam.Hiword())
                         {
                             case WM_MOUSEMOVE:
-                                if (Cursor.Current != defaultCursor)
+                                if (Cursor.Current != Cursors.Default)
                                 {
-                                    Cursor.Current = defaultCursor;
+                                    Cursor.Current = Cursors.Default;
                                 }
                                 break;
                             default:
@@ -218,17 +166,11 @@ namespace Spoiler.Lib
 
         }
 
-        protected override void OnCursorChanged(EventArgs e)
-        {
-            base.OnCursorChanged(e);
-            defaultCursor = Cursor.Current;
-        }
-
         protected override void OnSizeChanged(EventArgs e)
         {
             if (collapsed)
             {
-                Height = GetTitlebarHeight();
+                Height = titleBar.Height;
                 return;
             }
             base.OnSizeChanged(e);
@@ -249,9 +191,8 @@ namespace Spoiler.Lib
 
         private void WmNCCalcSize(ref Message m)
         {
-            var h = ShowTitlebar ? GetTitlebarHeight() : 0;
-            var b = BorderStyle == BorderStyle.FixedSingle ? 1 :
-               BorderStyle == BorderStyle.Fixed3D ? 2 : 0;
+            var h = ShowTitlebar ? titleBar.Height : 0;
+            var b = (int)BorderStyle;
 
             if (m.WParam != IntPtr.Zero)
             {
@@ -269,28 +210,22 @@ namespace Spoiler.Lib
         private void WmNCPaint(ref Message m)
         {
             if (!ShowTitlebar)
+            {
                 return;
+            }
 
             var dc = GetWindowDC(Handle);
             using (var g = Graphics.FromHdc(dc))
             {
-                using (var b = new SolidBrush(TitlebarBackColor))
-                    g.FillRectangle(b, GetTitlebarRectangle());
-                if (BorderStyle != BorderStyle.None)
-                    using (var p = new Pen(TitlebarBackColor))
-                        g.DrawRectangle(p, 0, 0,
-                            Width - 1, Height - 1);
+                titleBar.Draw(g, GetTitlebarRectangle());
 
-                var tf = TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter;
-                if (RightToLeft == RightToLeft.Yes)
-                    tf |= TextFormatFlags.Right | TextFormatFlags.RightToLeft;
-                var t = GetTitlebarRectangle();
-                var r = new Rectangle(
-                    t.Left + TitlebarTextPadding.Left,
-                    t.Top,
-                    t.Width - TitlebarTextPadding.Left - TitlebarTextPadding.Right,
-                    t.Height);
-                TextRenderer.DrawText(g, Text, TitlebarFont, r, TitlebarForeColor, tf);
+                if (BorderStyle != BorderStyle.None)
+                {
+                    using (var p = new Pen(titleBar.BackColor))
+                    {
+                        g.DrawRectangle(p, 0, 0, Width - 1, Height - 1);
+                    }
+                }
             }
             ReleaseDC(Handle, dc);
             m.Result = IntPtr.Zero;
@@ -300,7 +235,10 @@ namespace Spoiler.Lib
         {
             var size = base.GetPreferredSize(proposedSize);
             if (ShowTitlebar)
-                size.Height += GetTitlebarHeight();
+            {
+                size.Height += titleBar.Height;
+            }
+
             return size;
         }
 

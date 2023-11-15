@@ -19,18 +19,11 @@ namespace Spoiler.WinForms
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //spoiler2.Text = "OK!";
-        }
-
-        //protected override void OnMouseClick(MouseEventArgs e)
-        //{
-        //    base.OnMouseClick(e);
-        //    spoiler2.Text = $"{e.Location}";
-        //}
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            //spoiler1.ClientSize = new Size(spoiler1.Width, SystemInformation.CaptionHeight);
+            tableLayoutPanel1.Controls.Add(new Button
+            {
+                Text = $"{tableLayoutPanel1.Controls.Count+1}",
+                Dock = DockStyle.Fill
+            });
         }
     }
 }

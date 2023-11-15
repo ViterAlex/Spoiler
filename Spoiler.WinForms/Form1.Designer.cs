@@ -28,35 +28,57 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.button1 = new System.Windows.Forms.Button();
+            this.spoiler2 = new Spoiler.Lib.Spoiler();
             this.spoiler1 = new Spoiler.Lib.Spoiler();
-            this.button2 = new System.Windows.Forms.Button();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
             this.spoiler1.SuspendLayout();
             this.SuspendLayout();
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(400, 54);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 4;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // spoiler2
+            // 
+            this.spoiler2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.spoiler2.CollapsedText = null;
+            this.spoiler2.Location = new System.Drawing.Point(283, 90);
+            this.spoiler2.Name = "spoiler2";
+            this.spoiler2.Size = new System.Drawing.Size(192, 199);
+            this.spoiler2.TabIndex = 6;
+            this.spoiler2.UncollapsedText = null;
+            // 
             // spoiler1
             // 
             this.spoiler1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.spoiler1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.spoiler1.Controls.Add(this.button2);
-            this.spoiler1.Location = new System.Drawing.Point(25, 33);
+            this.spoiler1.CollapsedText = "Розгорнути";
+            this.spoiler1.Controls.Add(this.tableLayoutPanel1);
+            this.spoiler1.Location = new System.Drawing.Point(41, 54);
             this.spoiler1.Name = "spoiler1";
-            this.spoiler1.Size = new System.Drawing.Size(306, 147);
-            this.spoiler1.TabIndex = 3;
-            this.spoiler1.Text = "spoiler1";
-            this.spoiler1.TitlebarBackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.spoiler1.TitlebarTextPadding = new System.Windows.Forms.Padding(3);
+            this.spoiler1.Size = new System.Drawing.Size(186, 165);
+            this.spoiler1.TabIndex = 5;
+            this.spoiler1.UncollapsedText = "Згорнути";
             // 
-            // button2
+            // tableLayoutPanel1
             // 
-            this.button2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.button2.Location = new System.Drawing.Point(3, 3);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 1;
-            this.button2.Text = "button2";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
+            this.tableLayoutPanel1.AutoScroll = true;
+            this.tableLayoutPanel1.ColumnCount = 1;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 1;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(186, 147);
+            this.tableLayoutPanel1.TabIndex = 6;
             // 
             // propertyGrid1
             // 
@@ -74,7 +96,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 328);
+            this.Controls.Add(this.spoiler2);
             this.Controls.Add(this.spoiler1);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.propertyGrid1);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -84,9 +108,11 @@
         }
 
         #endregion
-        private System.Windows.Forms.Button button2;
         private System.Windows.Forms.PropertyGrid propertyGrid1;
+        private System.Windows.Forms.Button button1;
         private Lib.Spoiler spoiler1;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+        private Lib.Spoiler spoiler2;
     }
 }
 
